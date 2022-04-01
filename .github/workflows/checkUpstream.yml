@@ -1,0 +1,62 @@
+#######################################################
+# Check dockerhub for updates to the tomcat container #
+#######################################################
+
+name: Check For Upstream Updates
+
+on:
+  schedule:
+    # Once a day at 00:00 UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  createMatrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    
+    steps:
+      - name: Checkout default branch
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: set-matrix
+        run: |
+          matrix=$(
+          echo {
+            $(.github/helperScripts/remoteBranchNamesToJSON.sh),
+            $(.github/helperScripts/tomcatVersions.sh),
+            $(.github/helperScrips/jdkVersion.sh)
+          }
+          )
+          echo $matrix
+          echo "::set-output name=matrix::$matrix"
+
+  checkUpstream:
+    runs-on: ubuntu-latest
+    needs: createMatrix
+    steps:
+      - name: Verify matrix
+        run: matrix='${{ needs.createMatrix.outputs.matrix }}'
+
+      - name: Test git
+        run: git --version
+
+      - name: Checkout default branch
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Grab the most recent upstream tomcat version
+        run: echo "commented out..." #./.github/helperScripts/findTomcatVersion.sh ${{ env.tomcatversion }} ${{env.jdkversion }}
+
+      - name: Create new branch for each new version
+        run: echo "Create new branch for each new version"
+
+      - name: Update Dockerfiles
+        run: echo "Update Dockerfiles"
+
+      - name: Commit and push changes
+        run: echo "Commit and push changes"
